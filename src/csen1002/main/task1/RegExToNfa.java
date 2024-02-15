@@ -1,6 +1,7 @@
 package csen1002.main.task1;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 /**
  * Write your info here
@@ -14,6 +15,7 @@ public class RegExToNfa {
 
     ArrayList<Character> alphabet;
     ArrayList<Character> expression;
+    Stack<Character> expressionStack;
 
 
     /**
@@ -52,8 +54,27 @@ public class RegExToNfa {
      */
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
+        HandleStack();
         return null;
+    }
+
+    void HandleStack(){
+        for (int i = 0; i < expression.size(); i++) {
+            if(alphabet.contains(expression.get(i)) || expression.get(i).equals('e')){
+                expressionStack.push(expression.get(i));
+            } else {
+                HandleOperation(i);
+            }
+        }
+    }
+
+    void HandleOperation(int index) {
+        switch (expression.get(index)){
+            case '|': break;
+            case '.': break;
+            case '*': break;
+            default: break;
+        }
     }
 }
 

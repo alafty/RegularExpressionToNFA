@@ -57,7 +57,35 @@ public class RegExToNfa {
     @Override
     public String toString() {
         HandleStack();
-        return null;
+        NFA finalNFA = new NFA();
+        try{
+            finalNFA = nfaStack.pop();
+        } catch (Exception e){
+            System.out.println("Stack is empty at the end; incorrect input or implementation might be the cause.");
+        }
+        String returnString = "";
+        for (int i = 0; i < finalNFA.states.size(); i++) {
+            returnString += finalNFA.states.get(i).count + "; ";
+        }
+        returnString += "#";
+        
+        for (int i = 0; i < alphabet.size(); i++) {
+            returnString += alphabet.get(i) + "; ";
+        }
+        returnString += "#";
+
+        for (int i = 0; i < finalNFA.transitions.size(); i++) {
+            returnString += finalNFA.transitions.get(i) + "; ";
+        }
+        returnString += "#";
+
+        returnString += finalNFA.startState.count;
+        returnString += "#";
+
+        returnString += finalNFA.acceptState.count;
+        returnString += "#";
+
+        return returnString;
     }
 
     void HandleStack(){

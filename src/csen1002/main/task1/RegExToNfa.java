@@ -95,6 +95,11 @@ public class RegExToNfa {
         return returnString;
     }
 
+    /**
+     * Loops over the expression and pushes corresponding NFA's into the nfaStack
+     * comparison process
+     *
+     */
     void HandleStack(){
         for (int i = 0; i < expression.size(); i++) {
             if(alphabet.contains(expression.get(i)) || expression.get(i) == 'e'){
@@ -105,6 +110,11 @@ public class RegExToNfa {
         }
     }
 
+    /**
+     * Behaves as a controller that calls the needed function based
+     * on the current operator
+     *
+     */
     void HandleOperation(int index) {
         NFA firstParam = new NFA();
         NFA secondParam = new NFA();
@@ -133,6 +143,11 @@ public class RegExToNfa {
         }
     }
 
+    /**
+     * The union operator takes two NFA's and pushes the union of them
+     * into the nfaStack
+     *
+     */
     void Union(NFA firstParam, NFA secondParam)
     {
         State startState = new State(globalCount++);
@@ -171,6 +186,11 @@ public class RegExToNfa {
 
     }
 
+    /**
+     * The concatenate function takes two NFA's as input
+     * and pushes the concatenation of them into the nfaStack
+     *
+     */
     void Concatenate(NFA firstParam, NFA secondParam)
     {
 
@@ -200,6 +220,11 @@ public class RegExToNfa {
         nfaStack.push(firstParam);
     }
 
+    /**
+     * The Asterisk function takes one NFA's as input
+     * and pushes the Kleene star expression of it into the nfaStack
+     *
+     */
     void Asterisk(NFA param) {
         State newStartState = new State(globalCount++);
         State newAcceptState = new State(globalCount++);
@@ -230,6 +255,12 @@ public class RegExToNfa {
 
         nfaStack.push(asteriskNFA);
     }
+
+    /**
+     * The Create NFA function takes one literal as input
+     *
+     * @return Returns a NFA corresponding to the input literal
+     */
     NFA CreateNFA(Character literal){
         State beginState = new State(globalCount++);
         State acceptState = new State(globalCount++);

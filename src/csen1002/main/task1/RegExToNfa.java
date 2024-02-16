@@ -92,8 +92,6 @@ public class RegExToNfa {
         returnString += "#";
 
         returnString += finalNFA.acceptState.count;
-        returnString += "#";
-
         return returnString;
     }
 

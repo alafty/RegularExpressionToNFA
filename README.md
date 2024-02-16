@@ -15,7 +15,7 @@ To use the `RegExToNfa` class, follow these steps:
 Example:
 
 ```java
-String regex = "abcu#abc.∪";
+String regex = "abcu#abc|.∪.*";
 RegExToNfa converter = new RegExToNfa(regex);
 String nfaString = converter.toString();
 System.out.println(nfaString);

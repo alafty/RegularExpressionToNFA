@@ -5,91 +5,246 @@ import java.util.Stack;
 
 /**
  * Write your info here
- * 
- * @name Mohamed Moustafa Rabie
+ *
+ * @name Mohamed Moustafa
  * @id 49-3603
  * @labNumber 021
  */
 
 public class RegExToNfa {
 
-	Stack<String> postFixStack;
-	ArrayList<Character> alphabet;
-	ArrayList<Character> expression;
-	/**
-	 * Constructs an NFA corresponding to a regular expression based on Thompson's
-	 * construction
-	 * 
-	 * @param input The alphabet and the regular expression in postfix notation for
-	 *              which the NFA is to be constructed
-	 */
-	public RegExToNfa(String input) {
-		String alpha = input.split("#")[0];
-		this.alphabet = ConvertStringToArray(alpha);
-		String regExpression = input.split("#")[1];
-		this.expression = ConvertStringToArray(regExpression);
-	}
+    ArrayList<Character> alphabet;
+    ArrayList<Character> expression;
+    Stack<NFA> nfaStack;
 
-	/**
-	 * Converts a string to an ArrayList of chars for easier retrieval.
-	 *
-	 *
-	 * @param input The alphabet of the problem as a concatenated string
-	 *
-	 */
-	public ArrayList<Character> ConvertStringToArray(String input){
-		ArrayList<Character> temp = new ArrayList<>(input.length());
-		for (int i = 0; i < input.length(); i++) {
-			temp.add((input.charAt(i)));
-		}
-		return temp;
-	}
-	public void InsertIntoStack(ArrayList<Character> input){
-		Stack<Character> stack = new Stack<>();
-		for (int i = 0; i < input.size(); i++) {
-			if(alphabet.contains(input.get(i)) || input.get(i).equals('e')){
-				stack.push(input.get(i));
-			} else {
-				return;
-			}
-		}
-	}
+    int globalCount = 0;
 
-	/**
-	 * @return Returns a formatted string representation of the NFA. The string
-	 *         representation follows the one in the task description
-	 */
-	@Override
-	public String toString() {
-		InsertIntoStack(expression);
-		return null;
-	}
 
+    /**
+     * Constructs an NFA corresponding to a regular expression based on Thompson's
+     * construction
+     *
+     * @param input The alphabet and the regular expression in postfix notation for
+     *              which the NFA is to be constructed
+     */
+    public RegExToNfa(String input) {
+        String alpha = input.split("#")[0];
+        this.alphabet = StringToArray(alpha);
+        String regExpression = input.split("#")[1];
+        this.expression = StringToArray(regExpression);
+    }
+
+    /**
+     * Converts a string into an array list of chars to ease the retrieval and
+     * comparison process
+     *
+     * @param input The alphabet for which the NFA is to be constructed
+     *              or the regular expression to be evaluated
+     *
+     */
+    ArrayList<Character> StringToArray(String input){
+        ArrayList<Character> temp = new ArrayList<>(input.length());
+        for (int i = 0; i < input.length(); i++) {
+            temp.add(input.charAt(i));
+        }
+        return temp;
+    }
+
+    /**
+     * @return Returns a formatted string representation of the NFA. The string
+     * representation follows the one in the task description
+     */
+    @Override
+    public String toString() {
+        HandleStack();
+        NFA finalNFA = new NFA();
+        try{
+            finalNFA = nfaStack.pop();
+        } catch (Exception e){
+            System.out.println("Stack is empty at the end; incorrect input or implementation might be the cause.");
+        }
+        String returnString = "";
+        for (int i = 0; i < finalNFA.states.size(); i++) {
+            returnString += finalNFA.states.get(i).count + "; ";
+        }
+        returnString += "#";
+        
+        for (int i = 0; i < alphabet.size(); i++) {
+            returnString += alphabet.get(i) + "; ";
+        }
+        returnString += "#";
+
+        for (int i = 0; i < finalNFA.transitions.size(); i++) {
+            returnString += finalNFA.transitions.get(i) + "; ";
+        }
+        returnString += "#";
+
+        returnString += finalNFA.startState.count;
+        returnString += "#";
+
+        returnString += finalNFA.acceptState.count;
+        returnString += "#";
+
+        return returnString;
+    }
+
+    void HandleStack(){
+        for (int i = 0; i < expression.size(); i++) {
+            if(alphabet.contains(expression.get(i)) || expression.get(i).equals('e')){
+                nfaStack.push(CreateNFA(expression.get(i)));
+            } else {
+                HandleOperation(i);
+            }
+        }
+    }
+
+    void HandleOperation(int index) {
+        NFA firstParam = new NFA();
+        NFA secondParam = new NFA();
+        try {
+            secondParam = nfaStack.pop();
+            firstParam = nfaStack.pop();
+        } catch (Exception e)
+        {
+            System.out.println("Stack is empty");
+        }
+
+        switch (expression.get(index)){
+            case '|':
+                Union(firstParam, secondParam);
+                break;
+            case '.':
+                Concatenate(firstParam, secondParam);
+                break;
+            case '*':
+                Asterisk(secondParam);
+                nfaStack.push(firstParam);
+                break;
+            default:
+                break;
+        }
+    }
+
+    void Union(NFA firstParam, NFA secondParam)
+    {
+        State startState = new State(globalCount++);
+        State acceptState = new State(globalCount++);
+        NFA unionNFA  = new NFA();
+        unionNFA.startState = startState;
+        unionNFA.acceptState = acceptState;
+
+        unionNFA.states.add(startState);
+        for (int i = 0; i < firstParam.states.size(); i++) {
+            unionNFA.states.add(firstParam.states.get(i));
+        }
+        for (int i = 0; i < secondParam.states.size(); i++) {
+            unionNFA.states.add(secondParam.states.get(i));
+        }
+        unionNFA.states.add(acceptState);
+
+        String startTransition1 = startState.count + ", e, " + firstParam.startState.count;
+        String startTransition2 = startState.count + ", e, " + secondParam.startState.count;
+
+        String acceptTransition1 = firstParam.acceptState.count + ", e, " + acceptState.count;
+        String acceptTransition2 = secondParam.acceptState.count + ", e, " + acceptState.count;
+
+        unionNFA.transitions.add(startTransition1);
+        unionNFA.transitions.add(startTransition2);
+        for (int i = 0; i < firstParam.transitions.size(); i++) {
+            unionNFA.transitions.add(firstParam.transitions.get(i));
+        }
+        for (int i = 0; i < secondParam.transitions.size(); i++) {
+            unionNFA.transitions.add(secondParam.transitions.get(i));
+        }
+        unionNFA.transitions.add(acceptTransition1);
+        unionNFA.transitions.add(acceptTransition2);
+
+        nfaStack.push(unionNFA);
+
+    }
+
+    void Concatenate(NFA firstParam, NFA secondParam)
+    {
+        NFA concatNFA = firstParam;
+        for (int i = 1; i < secondParam.states.size(); i++) {
+            //skip the startState for concatenation
+            concatNFA.states.add(secondParam.states.get(i));
+        }
+
+        //skip the first state in the second parameter
+        String transition = firstParam.acceptState.count + ", e, " + secondParam.states.get(1).count;
+        concatNFA.transitions.add(transition);
+        for (int i = 1; i < secondParam.transitions.size(); i++) {
+            concatNFA.transitions.add(secondParam.transitions.get(i));
+        }
+        concatNFA.acceptState = secondParam.acceptState;
+
+        nfaStack.push(concatNFA);
+    }
+
+    void Asterisk(NFA param) {
+        State newStartState = new State(globalCount++);
+        State newAcceptState = new State(globalCount++);
+        String startTransition = newStartState.count + ", e, " + param.startState.count;
+        String acceptTransition = param.acceptState + ", e, " + newAcceptState;
+
+        NFA asteriskNFA = new NFA();
+
+        asteriskNFA.states.add(newStartState);
+        for (int i = 0; i < param.states.size(); i++) {
+            asteriskNFA.states.add(param.states.get(i));
+        }
+        asteriskNFA.states.add(newAcceptState);
+
+        asteriskNFA.startState = newStartState;
+        asteriskNFA.acceptState = newAcceptState;
+
+        asteriskNFA.transitions.add(startTransition);
+        for (int i = 0; i < param.transitions.size(); i++) {
+            asteriskNFA.transitions.add(param.transitions.get(i));
+        }
+        asteriskNFA.transitions.add(acceptTransition);
+
+        nfaStack.push(asteriskNFA);
+    }
+    NFA CreateNFA(Character literal){
+        State beginState = new State(globalCount++);
+        State acceptState = new State(globalCount++);
+        NFA temp = new NFA();
+        temp.states.add(beginState);
+        temp.startState = beginState;
+        temp.states.add(acceptState);
+        temp.acceptState = acceptState;
+        String transition = beginState.count + ", " + literal + ", " + acceptState.count + "; ";
+        temp.transitions.add(transition);
+
+        return temp;
+    }
 }
 
 class State {
-	int count;
+    int count;
 
-	public State(int count) {
-		this.count = count;
-	}
+    public State(int count) {
+        this.count = count;
+    }
 }
 
 class NFA {
-	State[] states;
-	String[] tranistions;
-	State firstState;
-	State acceptState;
+    ArrayList<State> states;
+    ArrayList<String> transitions;
+    State startState;
+    State acceptState;
 
-	public NFA(){
+    public NFA(){
 
-	}
+    }
+
 }
 
-enum Operation {
-	union,
-	concat,
-	asterisk,
-
+enum Operations {
+    union,
+    concat,
+    asterisk,
 
 }

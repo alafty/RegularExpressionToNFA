@@ -1,6 +1,8 @@
 package csen1002.main.task1;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.PriorityQueue;
 import java.util.Stack;
 
 /**
@@ -66,19 +68,24 @@ public class RegExToNfa {
             System.out.println("Stack is empty at the end; incorrect input or implementation might be the cause.");
         }
         String returnString = "";
-        for (int i = 0; i < finalNFA.states.size(); i++) {
-            returnString += finalNFA.states.get(i).count + ";";
+        for (State s : finalNFA.states) {
+            returnString += s.count + ";";
         }
+        returnString = returnString.substring(0, returnString.length()-1);
         returnString += "#";
         
-        for (int i = 0; i < alphabet.size(); i++) {
-            returnString += alphabet.get(i) + ";";
+        for (Character c : alphabet) {
+            returnString += c + ";";
         }
+        returnString = returnString.substring(0, returnString.length()-1);
         returnString += "#";
 
-        for (int i = 0; i < finalNFA.transitions.size(); i++) {
-            returnString += finalNFA.transitions.get(i);
+        while (!finalNFA.transitions.isEmpty()){
+            Transition t = finalNFA.transitions.remove();
+            String temp = t.from + "," + t.literal + "," + t.to + ";";
+            returnString += temp;
         }
+        returnString = returnString.substring(0, returnString.length()-1);
         returnString += "#";
 
         returnString += finalNFA.startState.count;
@@ -144,11 +151,15 @@ public class RegExToNfa {
         unionNFA.states.add(acceptState);
 
 
-        String startTransition1 = startState.count + ",e," + firstParam.startState.count + ";";
-        String startTransition2 = startState.count + ",e," + secondParam.startState.count + ";";
+        Transition startTransition1 = new Transition(startState.count ,
+                'e', firstParam.startState.count);
+        Transition startTransition2 = new Transition(startState.count,
+                'e',  secondParam.startState.count);
 
-        String acceptTransition1 = firstParam.acceptState.count + ",e," + acceptState.count + ";";
-        String acceptTransition2 = secondParam.acceptState.count + ",e," + acceptState.count + ";";
+        Transition acceptTransition1 = new Transition(firstParam.acceptState.count,
+                'e', acceptState.count);
+        Transition acceptTransition2 = new Transition(secondParam.acceptState.count,
+                'e', acceptState.count);
 
         unionNFA.transitions.addAll(firstParam.transitions);
         unionNFA.transitions.addAll(secondParam.transitions);
@@ -168,10 +179,23 @@ public class RegExToNfa {
         firstParam.states.addAll(secondParam.states);
         firstParam.states.remove(secondParam.startState);
 
-        String transition = firstParam.acceptState.count + ",e," + secondParam.states.get(1).count + ";";
+        //TODO: MAKE IT THAT YOU REPLACE EVERY TRANSITION THAT INCLUDED THE OLD STARTSTATE
 
         firstParam.transitions.addAll(secondParam.transitions);
-        firstParam.transitions.add(transition);
+        PriorityQueue<Transition> toAdd = new PriorityQueue<>();
+        PriorityQueue<Transition> toRemove = new PriorityQueue<>();
+        Iterator i = firstParam.transitions.iterator();
+        while(i.hasNext()){
+            Transition t = (Transition) i.next();
+            if(t.from == secondParam.startState.count){
+                Transition replacement = new Transition(firstParam.acceptState.count,
+                        t.literal, t.to);
+                toRemove.add(t);
+                toAdd.add(replacement);
+            }
+        }
+        firstParam.transitions.addAll(toAdd);
+        firstParam.transitions.removeAll(toRemove);
 
         firstParam.acceptState = secondParam.acceptState;
 
@@ -181,10 +205,14 @@ public class RegExToNfa {
     void Asterisk(NFA param) {
         State newStartState = new State(globalCount++);
         State newAcceptState = new State(globalCount++);
-        String startTransition = newStartState.count + ",e," + param.startState.count + ";";
-        String acceptTransition = param.acceptState.count + ",e," + newAcceptState.count + ";";
-        String startToEndTransition = newStartState.count + ",e," + newAcceptState.count + ";";
-        String middleTransition = param.acceptState.count + ",e," + param.startState.count + ";";
+        Transition startTransition = new Transition(newStartState.count,
+                'e', param.startState.count);
+        Transition acceptTransition = new Transition(param.acceptState.count,
+                'e', newAcceptState.count);
+        Transition startToEndTransition = new Transition(newStartState.count,
+                'e', newAcceptState.count);
+        Transition middleTransition = new Transition(param.acceptState.count,
+                'e', param.startState.count);
 
         NFA asteriskNFA = new NFA();
 
@@ -212,7 +240,8 @@ public class RegExToNfa {
         temp.startState = beginState;
         temp.states.add(acceptState);
         temp.acceptState = acceptState;
-        String transition = beginState.count + "," + literal + "," + acceptState.count + ";";
+        Transition transition = new Transition(beginState.count,
+                literal ,acceptState.count);
         temp.transitions.add(transition);
 
         return temp;
@@ -229,7 +258,7 @@ class State {
 
 class NFA {
     ArrayList<State> states = new ArrayList<>();
-    ArrayList<String> transitions = new ArrayList<>();
+    PriorityQueue<Transition> transitions = new PriorityQueue<>();
     State startState;
     State acceptState;
 
@@ -237,5 +266,35 @@ class NFA {
 
     }
 
+}
+
+class Transition implements Comparable<Transition>{
+
+    int from;
+    Character literal;
+    int to;
+    public Transition(int from, Character literal, int to){
+        this.from = from;
+        this.to = to;
+        this.literal = literal;
+    }
+
+    public int compareTo(Transition t) {
+        if(from < t.from) return -1;
+        else if (from > t.from) return 1;
+        else return LiteralBreak(t);
+    }
+
+    int LiteralBreak(Transition t){
+        if(literal < t.literal) return -1;
+        else if (literal > t.literal) return 1;
+        else return TieBreak(t);
+    }
+
+    int TieBreak(Transition t){
+        if(to < t.to) return -1;
+        else if (to > t.to) return 1;
+        else return 0;
+    }
 }
 

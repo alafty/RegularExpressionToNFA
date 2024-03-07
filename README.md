@@ -41,3 +41,7 @@ The output of the `toString()` method is a formatted string representation of th
 - `State`: Represents a state in the NFA.
 - `NFA`: Represents the NFA, containing states, transitions, start state, and accept state.
 - `Transition`: Represents a transition between states in the NFA.
+
+## Authors
+
+- [Mohamed El-Alafty](https://github.com/alafty)
